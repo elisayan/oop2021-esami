@@ -36,6 +36,6 @@ public class Test {
      */
 
     public static void main(String[] args) throws java.io.IOException {
-        new GUI(10); 
+        new GUI(8); 
     }
 }
