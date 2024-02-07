@@ -1,12 +1,24 @@
 package a06.e1;
 
 import java.util.*;
+import java.util.stream.*;
+import java.util.function.*;
 
 public class CirclerFactoryImpl implements CirclerFactory {
 
-    public abstract class CirclerImpl<T> implements Circler<T> {
+    private class CirclerImpl<T> implements Circler<T>{
 
-        Iterator<T> iterator;
+        private Iterator<T> iterator = null;
+        private Function<Integer, Stream<Integer>> indexes;
+
+        public CirclerImpl(Function<Integer, Stream<Integer>> indexes) {
+            this.indexes = indexes;
+        }
+
+        @Override
+        public void setSource(List<T> elements) {
+            iterator = indexes.apply(elements.size()).map(elements::get).iterator();
+        }
 
         @Override
         public T produceOne() {
@@ -14,92 +26,67 @@ public class CirclerFactoryImpl implements CirclerFactory {
         }
 
         @Override
-        public void setSource(List<T> elements) {
-            iterator = new InfiniteIterator<>(elements);
+        public List<T> produceMany(int n) {
+            return Stream.generate(this::produceOne).limit(n).toList();
         }
-
-        private static class InfiniteIterator<T> implements Iterator<T> {
-            private final List<T> elements;
-            private int index;
     
-            public InfiniteIterator(List<T> elements) {
-                if (elements.isEmpty()) {
-                    throw new IllegalArgumentException("Source list must not be empty");
-                }
-                this.elements = elements;
-                this.index = 0;
-            }
-    
-            @Override
-            public boolean hasNext() {
-                return true; // Always true for an infinite iterator
-            }
-    
-            @Override
-            public T next() {
-                T element = elements.get(index);
-                index = (index + 1) % elements.size(); // Loop back to the beginning if we reach the end
-                return element;
-            }
-        }
+        
     }
 
     @Override
     public <T> Circler<T> leftToRight() {
-        return new CirclerImpl<T>() {
-
-            @Override
-            public List<T> produceMany(int n) {
-                List<T> output = new LinkedList<>();
-
-                for (int i = 0; i < n; i++) {
-                    output.add(iterator.next());
-                }
-                return output;
-            }
-            
-        };
+        return new CirclerImpl<>(n -> Stream.iterate(0, i -> i + 1).map(i -> i % n));
     }
 
     @Override
     public <T> Circler<T> alternate() {
-        return new CirclerImpl<T>() {
-
-            @Override
-            public List<T> produceMany(int n) {
-                List<T> output = new LinkedList<>();
-
-                for (int i = 0; i < n; i++) {
-                    output.add(iterator.next());
-                }
-                return output;
-            }
-            
-        };
+        return new CirclerImpl<>(
+                n -> Stream.iterate(0, i -> i + 1).map(i -> (i / n) % 2 == 0 ? i % n : n - 1 - (i % n)));
     }
 
     @Override
     public <T> Circler<T> stayToLast() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'stayToLast'");
+        return new CirclerImpl<>(n -> Stream.iterate(0, i -> i == n - 1 ? i : i + 1));
     }
 
     @Override
     public <T> Circler<T> leftToRightSkipOne() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'leftToRightSkipOne'");
+        return new CirclerImpl<>(n -> {
+            Stream<Integer> stream = Stream.iterate(0, i -> i + 1).map(i -> i % n);
+            var it = stream.iterator();
+            return Stream.generate(() -> { 
+                int val = it.next(); 
+                it.next(); 
+                return val; 
+            });
+        });
     }
 
     @Override
     public <T> Circler<T> alternateSkipOne() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'alternateSkipOne'");
+        return new CirclerImpl<>(n -> {
+            Stream<Integer> stream = Stream.iterate(0, i -> i + 1).map(i -> (i / n) % 2 == 0 ? i % n : n - 1 - (i % n));
+            var it = stream.iterator();
+            return Stream.generate(() -> { 
+                int val = it.next(); 
+                it.next(); 
+                return val; 
+            });
+        });
     }
 
     @Override
     public <T> Circler<T> stayToLastSkipOne() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'stayToLastSkipOne'");
+        return new CirclerImpl<>(n -> {
+            Stream<Integer> stream = Stream.iterate(0, i -> i == n - 1 ? i : i + 1);
+            var it = stream.iterator();
+            return Stream.generate(() -> { 
+                int val = it.next(); 
+                it.next(); 
+                return val; 
+            });
+        });
     }
+
 
 }
