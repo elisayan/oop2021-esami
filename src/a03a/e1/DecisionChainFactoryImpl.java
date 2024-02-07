@@ -67,17 +67,16 @@ public class DecisionChainFactoryImpl implements DecisionChainFactory {
         return new DecisionChain<A,B>() {
 
             @Override
-            public Optional<B> result(A a) {
+            public Optional<B> result(A a) {                
                 if (a.equals(mapList.get(0).get1())) {
                     return Optional.of(mapList.get(0).get2());
                 }
                 if (a.equals(mapList.get(1).get1()) || a.equals(mapList.get(2).get1())) {
                     return this.next(a).result(a);
                 }
-                if (!mapList.contains(a)) {
+                if (mapList.isEmpty() || !mapList.contains(a)) {
                     return Optional.of(defaultReply);
                 }
-                
                 return Optional.empty();
             }
 
@@ -141,19 +140,21 @@ public class DecisionChainFactoryImpl implements DecisionChainFactory {
 
             @Override
             public Optional<B> result(A a) {
-                for (Pair<Predicate<A>,B> pair : cases) {
-                    if (pair.get1().test(a)) {
-                        return Optional.of(pair.get2());
-                    } 
-                    
+                if (cases.isEmpty()) {
+                    return Optional.of(defaultReply);
                 }
-                return Optional.of(defaultReply);
+
+                if (cases.get(0).get1().test(a)) {
+                    return Optional.of(cases.get(0).get2());
+                }
+                return Optional.empty();
             }
 
             @Override
             public DecisionChain<A, B> next(A a) {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Unimplemented method 'next'");
+                var recursiveCases = new LinkedList<>(cases);
+				recursiveCases.poll();
+				return switchChain(recursiveCases, defaultReply);
             }
             
         };
