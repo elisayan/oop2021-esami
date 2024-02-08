@@ -4,7 +4,6 @@ import java.util.*;
 
 public class LogicsImpl implements Logics {
     private final int size;
-    private final Random random = new Random();
     private Direction direction = Direction.UP;
     private List<Pair<Integer, Integer>> selected = new LinkedList<>();
 
@@ -24,32 +23,39 @@ public class LogicsImpl implements Logics {
         }
 
         Direction next() {
-            return Direction.values()[(ordinal() + 1) % Direction.values().length];
+            return switch (this) {
+                case UP -> RIGHT;
+                case RIGHT -> DOWN;
+                case DOWN -> LEFT;
+                case LEFT -> UP;
+            };
         }
     }
 
     private Pair<Integer, Integer> setFirst() {
+        final Random random = new Random();
         return new Pair<>(random.nextInt(size - 4) + 2, random.nextInt(size - 4) + 2);
     }
 
     @Override
-    public void hit() {
+    public Boolean hit() {
         if (selected.isEmpty()) {
             selected.add(setFirst());
-        } else {
-
-            var last = selected.get(selected.size() - 1);
-            var directions = List.of(direction.next(), direction);
-            for (var dir : directions) {
-                Pair<Integer, Integer> position = new Pair<Integer, Integer>(last.getX() + direction.x,
-                        last.getY() + direction.y);
-                if (!selected.contains(position)) {
-                    selected.add(position);
-                    direction = dir;
-                }
-            }
-
+            return true;
         }
+        var last = selected.get(selected.size() - 1);
+        var directions = List.of(direction.next(), direction);
+        for (var dir : directions) {
+            
+            Pair<Integer, Integer> position = new Pair<Integer, Integer>(last.getX() + dir.x,
+                    last.getY() + dir.y);
+            if (!selected.contains(position)) {
+                selected.add(position);
+                direction = dir;
+                return true;
+            }
+        }
+        return false;
 
     }
 
