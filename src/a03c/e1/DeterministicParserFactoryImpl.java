@@ -82,15 +82,7 @@ public class DeterministicParserFactoryImpl implements DeterministicParserFactor
 
     @Override
     public DeterministicParser sequence(DeterministicParser first, DeterministicParser second) {
-        return new DeterministicParser() {
-
-            @Override
-            public Optional<List<String>> accepts(List<String> tokens) {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Unimplemented method 'accepts'");
-            }
-            
-        };
+        return token -> first.accepts(token).flatMap(second::accepts);
     }
 
 }
